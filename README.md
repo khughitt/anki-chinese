@@ -12,11 +12,14 @@ A simple script to parse a file containing Chinese text and generate
 ![Example back](extra/example_back.png)
 
 Text is parsed and split into individual words and phrases using the [Stanza NLP package](https://stanfordnlp.github.io/stanza/).
-Google translate is then used (via [translate-shell]()) to retrieve translations and
+Google translate is then used (via [translate-shell](https://github.com/soimort/translate-shell)) to retrieve translations and
 definitions for each separate word/phrase.
 
 These translations are post-processed to include pinyin, and the final results stored in
 a tab-delimited file which can be imported by Anki.
+
+This should be useful for parsing things like news articles, blog posts, or even full
+books (if you have access to the text for it).
 
 Requirements
 ------------
@@ -113,8 +116,9 @@ Limitations
 -----------
 
 - Google translate limits users to ~150 API requests every few hours so the script will
-  need to pause after each such batch.
-- I am currently using the script to translate traditional chinese (). The script has
+  need to pause after each such batch. Progress is save periodically to avoid having to
+  re-query many words if the script is stopped mid-way.
+- I am currently using the script to translate traditional chinese (繁體字). The script has
   generally been written in such a way that it can be easily extended to support
   simplified chinese parsing, but a little bit of work would need to be done first.
 - The list of "common words" that are filtered out 
