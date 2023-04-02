@@ -6,11 +6,11 @@
 import argparse
 import os
 import re
-import stanza
 import time
+from typing import Any
+import stanza
 import pandas as pd
 from zhon import pinyin
-from collections import Counter
 from dragonmapper import hanzi
 from hanziconv import HanziConv
 from subprocess import PIPE, Popen
@@ -217,7 +217,7 @@ def parse_args():
     return args
 
 
-def query_google_translate(chinese, char_format):
+def query_google_translate(chinese:str, char_format:str) -> str:
     """
     Uses translate-shell to query Google Translate
 
@@ -255,7 +255,7 @@ def query_google_translate(chinese, char_format):
     return trans
 
 
-def add_pinyin_tone_html(pinyin_word):
+def add_pinyin_tone_html(pinyin_word:str) -> str:
     """Detects the tone of pinyin for a single character and generates a corresponding
     <span> block"""
     tone1_re = re.compile("[āēīōūǖ]")
@@ -275,7 +275,7 @@ def add_pinyin_tone_html(pinyin_word):
       return f"<span class='tone5'>{pinyin_word}</span>"
 
 
-def get_pinyin(chinese_phrase):
+def get_pinyin(chinese_phrase:str) -> tuple:
     # first, query pinyin for complete phrase
     pinyin_phrase = hanzi.to_pinyin(chinese_phrase)
 
@@ -288,7 +288,7 @@ def get_pinyin(chinese_phrase):
     return (pinyin_phrase, pinyin_html)
 
 
-def load_text(infile):
+def load_text(infile:str) -> list[str]:
     """Parses input text and returns a list of lines from the file with punctuation and
     extra white-space removed"""
     # load text
@@ -318,30 +318,46 @@ def load_text(infile):
     return lines
 
 
-def tokenize_text(lines, nlp):
+def tokenize_text(lines:list[str], nlp:stanza.pipeline.core.Pipeline, common_words:list[str]) -> dict[str, dict[str,Any]]:
     """Uses Stanza to tokenize input chinese text"""
-    tokenized = []
+    tokens:dict[str, dict[str,Any]] = {}
 
     for line in lines:
         # since we are parsing single sentences, each result is of length 1
-        token_list = nlp(line).to_dict()[0]
-        tokens = [token["text"] for token in token_list]
+        entries = nlp(line).to_dict()[0]
 
-        tokenized = list(set(tokenized + tokens))
+        # iterate over tokens and add unique ones
+        for token in entries:
+            
+            if token["text"] in common_words:
+                continue
 
-    return tokenized
+            # new token
+            if token["text"] not in tokens:
+                tokens[token["text"]] = {
+                    "token": token["text"],
+                    "sentences": [line],
+                    "start_positions": [token["start_char"]],
+                    "end_positions": [token["end_char"]]
+                }
+            else:
+                # new sentence
+                tokens[token["text"]]["sentences"].append(line)
+                tokens[token["text"]]["start_positions"].append(token["start_char"])
+                tokens[token["text"]]["end_positions"].append(token["end_char"])
 
+    return tokens
 
-def translate_chinese(chinese, char_format):
+def translate_chinese(chinese:str, char_format:str) -> str:
     """Translates a single chinese phrase to english"""
     # query api up to 3 times before giving up
     num_tries = 0
 
-    raw_trans = None
+    trans = None
 
-    while raw_trans is None and num_tries < 3:
+    while trans is None and num_tries < 3:
         try:
-            raw_trans = query_google_translate(chinese, char_format)
+            trans = query_google_translate(chinese, char_format)
         except Exception as e:
             print(e)
             print(
@@ -353,9 +369,15 @@ def translate_chinese(chinese, char_format):
             time.sleep(60 * 60)
 
     # if query failed multiple time, print error message and exit
-    if raw_trans is None:
-        raise "Unable to translate {chinese}. Exiting..."
+    if trans is None:
+        raise f"Unable to translate {chinese}. Exiting..."
 
+    return trans
+
+def parse_translate_result(raw_trans:str) -> dict[str,Any]:
+    """
+    Parses raw result from Google translate API and returns a dictionary of formatted components
+    """
     # convert formatting characters ansi -> html
     trans = raw_trans
 
@@ -494,40 +516,57 @@ if __name__ == "__main__":
 
     # detect words and phrases in text
     print("Extracting individual words...")
-    tokens = tokenize_text(lines, nlp)
+    tokens = tokenize_text(lines, nlp, COMMON_WORDS)
 
-    # list to store words to be queried in
-    input_words = []
-
-    # if appending to existing output, get list of words that have already been
-    # processed
+    # if appending to existing output, skip tokens that are already present
     if dat is not None:
-        skip_words = COMMON_WORDS + dat.chinese
-    else:
-        skip_words = COMMON_WORDS
+        for word in dat.chinese:
+            if word in tokens:
+                del tokens[word]
 
-    # iterate over words, and translate ones that aren't in the list of common words
-    # and have not yet been processed
-    input_words = [x for x in tokens if x not in skip_words]
-
-    print(f"Translating {len(input_words)} unique words...")
+    print(f"Translating {len(tokens)} unique words...")
 
     # list to store result entries in
     result = []
 
-    # iterate over input word list and look up translations
-    for i, chinese in enumerate(input_words):
-        print("Processing %s...[%d/%d]" % (chinese, i + 1, len(input_words)))
-        result.append(translate_chinese(chinese, args.format))
+    # iterate over words and add translations, etc.
+    for i, chinese in enumerate(tokens):
+        print("Processing %s...[%d/%d]" % (chinese, i + 1, len(tokens)))
 
-        # periodically update output table
+        token_dict = tokens[chinese]
+
+        trans = translate_chinese(chinese, args.format)
+        entry = parse_translate_result(trans)
+
+        # add sentence(s) where the word appears
+        sentence_text = ""
+        sentence_html = ""
+
+        for j, sentence in enumerate(token_dict["sentences"]):
+            # may not be the correct punctuation, but good enough for now..
+            sentence_text += sentence + "。<br />"
+            
+            start = token_dict["start_positions"][j]
+            end = token_dict["end_positions"][j]
+
+            sentence_html += sentence[:start] + "<span class='highlight'>"
+            sentence_html += chinese + "</span>"
+            sentence_html += sentence[end:] + "。<br />"
+        
+        entry["sentences"] = sentence_text
+        entry["sentences_html"] = sentence_html
+
+        result.append(entry)
+
+        # periodically update output table; this way progress can be saved in case a failure is
+        # encountered at some point
         if i % 25 == 0:
             print("Saving progress...")
             # convert to a pandas dataframe and store result
             if dat is None:
                 dat = pd.DataFrame(result)
             else:
-                dat = dat.append(result)
+                dat = pd.concat([dat, pd.DataFrame(result)])
 
             # testing (includes raw ansi output from translate-shell)
             dat.set_index("chinese").to_csv(
@@ -536,7 +575,7 @@ if __name__ == "__main__":
 
             # anki result
             anki_dat = dat[
-                ["chinese", "pinyin_html", "english_long", "definition_html"]
+                ["chinese", "pinyin_html", "english_long", "definition_html", "sentences_html"]
             ]
 
             anki_dat.set_index("chinese").to_csv(args.outfile, header=False, sep="\t")
@@ -547,7 +586,7 @@ if __name__ == "__main__":
     if dat is None:
         dat = pd.DataFrame(result)
     else:
-        dat = dat.append(result)
+        dat = pd.concat([dat, pd.DataFrame(result)])
 
     # testing (includes raw ansi output from translate-shell)
     dat.set_index("chinese").to_csv(
@@ -555,6 +594,6 @@ if __name__ == "__main__":
     )
 
     # anki result
-    anki_dat = dat[["chinese", "pinyin_html", "english_long", "definition_html"]]
+    anki_dat = dat[["chinese", "pinyin_html", "english_long", "definition_html", "sentences_html"]]
 
     anki_dat.set_index("chinese").to_csv(args.outfile, header=False, sep="\t")

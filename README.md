@@ -47,18 +47,18 @@ E.g.:
 python anki-vocab.py example/harry_potter_wikipedia.txt example/harry_potter_wikipedia_vocab.txt
 ```
 
-This will generate a tab-delimited file with four columns:
+This will generate a tab-delimited file with five columns:
 
 1. Chinese
 2. Pinyin
 3. English
 4. Definition
+5. Sentence(s)
 
-You can then import this file into Anki and assign fieldnames to each of the four
-columns.
+You can then import this file into Anki and assign fieldnames to each of the five columns.
 
-Then, to specify how Anki should display the information on your flash cards, you can
-create a new note type which uses the four fields.
+Then, to specify how Anki should display the information on your flash cards, you can create a new
+note type which uses the five fields.
 
 For example:
 
@@ -80,6 +80,9 @@ For example:
 <br />
 <br />
 {{ Definition }}
+<br />
+<br />
+{{ Sentences }}
 ```
 
 **Styling**
@@ -104,6 +107,9 @@ For example:
 .tone4 {
 	color: purple;
 }
+.highlight {
+  color: magenta;
+}
 ```
 
 This should result in a format similar to what is shown in the example screenshot above.
@@ -116,11 +122,11 @@ Limitations
 -----------
 
 - Google translate limits users to ~150 API requests every few hours so the script will
-  need to pause after each such batch. Progress is save periodically to avoid having to
+  need to pause after each such batch. Progress is saved periodically to avoid having to
   re-query many words if the script is stopped mid-way.
-- I am currently using the script to translate traditional chinese (繁體字). The script has
+- I am currently using the script to translate traditional Chinese (繁體字). The script has
   generally been written in such a way that it can be easily extended to support
-  simplified chinese parsing, but a little bit of work would need to be done first.
+  simplified Chinese parsing, but a little bit of work would need to be done first.
 - The list of "common words" that are filtered out 
 
 Development
@@ -129,7 +135,7 @@ Development
 I probably won't have time to work on this much, but feel free to submit pull requests
 with bug fixes or improvements.
 
-As mentioned above, steps were taken to begin to support simplified chinese as well, but
-I have not thoroughly tested that functionality and it likely needs a little more work
-to get working.
+As mentioned above, steps were taken to begin to support simplified Chinese as well, but
+I have not thoroughly tested that functionality and it likely needs a little more effort
+to get it working properly.
 
