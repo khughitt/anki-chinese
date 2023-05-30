@@ -293,30 +293,18 @@ def load_text(infile:str) -> list[str]:
     extra white-space removed"""
     # load text
     with open(infile) as fp:
-        lines = fp.readlines()
+        text = fp.read()
 
-    # strip english letters, punctuation, and numbers
-    eng_regex = r"[a-zA-Z0-9\[\]\{\}\(\)`~\-_=\.\?\+!@#\$%^&\*\|\\/,<>:;'\"]+"
+    # split sentences
+    sentences = re.split(r"[！？｡。\.\?!]", text)
 
-    lines = [re.sub(eng_regex, "", x) for x in lines]
+    # strip empty sentences and newline characters
+    sentences = [x.strip() for x in sentences]
 
-    # strip punctuation (double-width)
-    # https://stackoverflow.com/questions/36640587/how-to-remove-chinese-punctuation-in-python
-    punc_chars = (
-        '"！？｡。＂＃＄％＆＇（）＊＋，－·／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏'
-    )
-    punc_regex = r"[%s]+" % punc_chars
+    # remove any remaining empty sentences
+    sentences = [x for x in sentences if x != ""]
 
-    lines = [re.sub(punc_regex, "", x) for x in lines]
-
-    # strip empty lines and newline characters
-    lines = [x.strip() for x in lines if x != "\n"]
-
-    # remove any remaining empty lines
-    lines = [x for x in lines if x != ""]
-
-    return lines
-
+    return sentences
 
 def tokenize_text(lines:list[str], nlp:stanza.pipeline.core.Pipeline, common_words:list[str]) -> dict[str, dict[str,Any]]:
     """Uses Stanza to tokenize input chinese text"""
@@ -327,9 +315,26 @@ def tokenize_text(lines:list[str], nlp:stanza.pipeline.core.Pipeline, common_wor
         entries = nlp(line).to_dict()[0]
 
         # iterate over tokens and add unique ones
-        for token in entries:
-            
+        for token in entries:            
+
+            # skip common words
             if token["text"] in common_words:
+                continue
+
+            # skip tokens including english letters/numbers/punctuation
+            eng_regex = re.compile(r"[a-zA-Z0-9\[\]\{\}\(\)`~\-_=\.\?\+!@#\$%^&\*\|\\/,<>:;'\"]+")
+
+            if eng_regex.search(token["text"]) is not None:
+                continue
+
+            # skip tokens including double-width punctuation
+            # https://stackoverflow.com/questions/36640587/how-to-remove-chinese-punctuation-in-python
+            punc_chars = (
+                '"！？｡。＂＃＄％＆＇（）＊＋，－·／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏'
+            )
+            punc_regex = re.compile(r"[%s]+" % punc_chars)
+
+            if punc_regex.search(token["text"]) is not None:
                 continue
 
             # new token
