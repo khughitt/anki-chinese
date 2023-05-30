@@ -296,7 +296,7 @@ def load_text(infile:str) -> list[str]:
         text = fp.read()
 
     # split sentences
-    sentences = re.split(r"[！？｡。\.\?!]", text)
+    sentences = re.split(r"[！？…｡。\.\?!]", text)
 
     # strip empty sentences and newline characters
     sentences = [x.strip() for x in sentences]
@@ -548,16 +548,19 @@ if __name__ == "__main__":
         sentence_html = ""
 
         for j, sentence in enumerate(token_dict["sentences"]):
+            # remove any stray newlines due to uncommon sentence delimiters
+            sentence = sentence.replace("\n", "")
+            
             # may not be the correct punctuation, but good enough for now..
             sentence_text += sentence + "。<br />"
-            
+
             start = token_dict["start_positions"][j]
             end = token_dict["end_positions"][j]
 
             sentence_html += sentence[:start] + "<span class='highlight'>"
             sentence_html += chinese + "</span>"
             sentence_html += sentence[end:] + "。<br />"
-        
+
         entry["sentences"] = sentence_text
         entry["sentences_html"] = sentence_html
 
