@@ -547,7 +547,16 @@ if __name__ == "__main__":
         sentence_text = ""
         sentence_html = ""
 
+        # keep track of sentences to avoid adding the same one multiple times when a word is present
+        # more than one
+        sentences_seen = []
+
         for j, sentence in enumerate(token_dict["sentences"]):
+            if sentence in sentences_seen:
+                continue
+            else:
+                sentences_seen.append(sentence)
+
             # remove any stray newlines due to uncommon sentence delimiters
             sentence = sentence.replace("\n", "")
             
@@ -577,9 +586,9 @@ if __name__ == "__main__":
                 dat = pd.concat([dat, pd.DataFrame(result)])
 
             # testing (includes raw ansi output from translate-shell)
-            dat.set_index("chinese").to_csv(
-                args.outfile.replace(".tsv", "-debug.tsv"), sep="\t"
-            )
+            #  dat.set_index("chinese").to_csv(
+            #      args.outfile.replace(".tsv", "-debug.tsv"), sep="\t"
+            #  )
 
             # anki result
             anki_dat = dat[
@@ -597,9 +606,9 @@ if __name__ == "__main__":
         dat = pd.concat([dat, pd.DataFrame(result)])
 
     # testing (includes raw ansi output from translate-shell)
-    dat.set_index("chinese").to_csv(
-        args.outfile.replace(".tsv", "-debug.tsv"), sep="\t"
-    )
+    #  dat.set_index("chinese").to_csv(
+    #      args.outfile.replace(".tsv", "-debug.tsv"), sep="\t"
+    #  )
 
     # anki result
     anki_dat = dat[["chinese", "pinyin_html", "english_long", "definition_html", "sentences_html"]]
