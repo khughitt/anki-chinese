@@ -321,6 +321,10 @@ def tokenize_text(lines:list[str], nlp:stanza.pipeline.core.Pipeline, common_wor
             if token["text"] in common_words:
                 continue
 
+            # skip tokens including "了"
+            if "了" in token["text"]:
+                continue
+
             # skip tokens including english letters/numbers/punctuation
             eng_regex = re.compile(r"[a-zA-Z0-9\[\]\{\}\(\)`~\-_=\.\?\+!@#\$%^&\*\|\\/,<>:;'\"]+")
 
