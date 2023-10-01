@@ -499,12 +499,18 @@ if __name__ == "__main__":
     # parse command-line arguments
     args = parse_args()
 
-    # download traditional chinese language model
     print("Loading Stanza...")
-    stanza.download("zh-hant")
+
+    # download traditional chinese language model
+    if args.format == "traditional":
+        lang = "zh-hant"
+    else:
+        lang = "zh"
+
+    stanza.download(lang)
 
     # initialize pipeline
-    nlp = stanza.Pipeline("zh-hant", processors="tokenize")
+    nlp = stanza.Pipeline(lang, processors="tokenize")
 
     # parse input text
     lines = load_text(args.infile)
@@ -519,7 +525,19 @@ if __name__ == "__main__":
     # convert from simplified -> traditional chinese, if requested
     if args.convert:
         if args.format == "traditional":
-            lines = [HanziConv.toTraditional(x) for x in lines]
+            trans_lines = []
+
+            for line in lines:
+                trans = HanziConv.toTraditional(line)
+
+                # fix mistranslations
+                trans = trans.replace("瞭", "了")
+                trans = trans.replace("彆", "别")
+                trans = trans.replace("齣", "出")
+
+                trans_lines.append(trans)
+
+            lines = trans_lines
         else:
             lines = [HanziConv.toSimplified(x) for x in lines]
 
@@ -589,11 +607,6 @@ if __name__ == "__main__":
             else:
                 dat = pd.concat([dat, pd.DataFrame(result)])
 
-            # testing (includes raw ansi output from translate-shell)
-            #  dat.set_index("chinese").to_csv(
-            #      args.outfile.replace(".tsv", "-debug.tsv"), sep="\t"
-            #  )
-
             # anki result
             anki_dat = dat[
                 ["chinese", "pinyin_html", "english_long", "definition_html", "sentences_html"]
@@ -608,11 +621,6 @@ if __name__ == "__main__":
         dat = pd.DataFrame(result)
     else:
         dat = pd.concat([dat, pd.DataFrame(result)])
-
-    # testing (includes raw ansi output from translate-shell)
-    #  dat.set_index("chinese").to_csv(
-    #      args.outfile.replace(".tsv", "-debug.tsv"), sep="\t"
-    #  )
 
     # anki result
     anki_dat = dat[["chinese", "pinyin_html", "english_long", "definition_html", "sentences_html"]]
