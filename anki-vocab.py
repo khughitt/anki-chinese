@@ -321,8 +321,12 @@ def tokenize_text(lines:list[str], nlp:stanza.pipeline.core.Pipeline, common_wor
             if token["text"] in common_words:
                 continue
 
-            # skip tokens including "了"
-            if "了" in token["text"]:
+            # skip tokens starting with "不", "一", "有"
+            if token["text"][0] in ["不", "一", "有"]:
+                continue
+
+            # skip tokens ending in "了"
+            if token["text"][-1] == "了":
                 continue
 
             # skip tokens including english letters/numbers/punctuation
