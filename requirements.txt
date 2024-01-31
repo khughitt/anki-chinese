@@ -1,0 +1,6 @@
+stanza
+pandas
+zhon
+dragonmapper
+hanziconv
+dragonmapper
