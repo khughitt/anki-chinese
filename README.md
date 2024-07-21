@@ -1,8 +1,6 @@
-Anki Chinese Vocabulary Deck Builder
-====================================
+# Anki Chinese Vocabulary Deck Builder
 
-Overview
---------
+## Overview
 
 A simple script to parse a file containing Chinese text and generate
 [Anki](https://apps.ankiweb.net/) flashcards from it.
@@ -21,22 +19,26 @@ a tab-delimited file which can be imported by Anki.
 This should be useful for parsing things like news articles, blog posts, or even full
 books (if you have access to the text for it).
 
-Requirements
-------------
+## Installation
 
-- [Python](https://www.python.org/)
-- [Translate-shell](https://github.com/soimort/translate-shell)
-- [Stanza](https://stanfordnlp.github.io/stanza/)
-- [Pandas](https://pandas.pydata.org/)
-- [dragonmapper](https://github.com/tsroten/dragonmapper)
-- [hanziconv](https://pythonhosted.org/hanziconv/)
-- [zhon](https://pypi.org/project/zhon/)
+At present, the tool is not hosted on PyPi.
 
-Usage
------
+The simplest way to get started is to clone the repo and use [poetry](https://python-poetry.org) to install & run it:
 
 ```
-usage: anki-vocab.py [-h] [--append] [--convert]
+git clone https://github.com/khughitt/anki-chinese
+
+cd anki-chinese
+poetry install
+```
+
+You should then be able to run the CLI using `poetry run ankichinese` from the project directory, as
+shown in the "Usage" section below.
+
+## Usage
+
+```
+usage: ankichinese [-h] [--append] [--convert]
                      [--format {traditional,simplified}]
                      INFILE OUTFILE
 ```
@@ -44,7 +46,9 @@ usage: anki-vocab.py [-h] [--append] [--convert]
 E.g.:
 
 ```
-python anki-vocab.py example/harry_potter_wikipedia.txt example/harry_potter_wikipedia_vocab.txt
+poetry run ankichinese \
+    example/harry_potter_wikipedia.txt \
+    example/harry_potter_wikipedia_vocab.txt
 ```
 
 This will generate a tab-delimited file with five columns:
@@ -118,8 +122,7 @@ Note that pinyin phrases are wrapped in html elements including a class indicati
 of the character. This way, Anki can be configured to use a different font color for
 each different tone, if desired, as shown above.
 
-Limitations
------------
+## Limitations
 
 - Google translate limits users to ~150 API requests every few hours so the script will
   need to pause after each such batch. Progress is saved periodically to avoid having to
@@ -129,8 +132,7 @@ Limitations
   simplified Chinese parsing, but a little bit of work would need to be done first.
 - The list of "common words" that are filtered out 
 
-Development
------------
+## Development
 
 I probably won't have time to work on this much, but feel free to submit pull requests
 with bug fixes or improvements.
@@ -138,4 +140,14 @@ with bug fixes or improvements.
 As mentioned above, steps were taken to begin to support simplified Chinese as well, but
 I have not thoroughly tested that functionality and it likely needs a little more effort
 to get it working properly.
+
+## Dependencies
+
+- [Python](https://www.python.org/)
+- [Translate-shell](https://github.com/soimort/translate-shell)
+- [Stanza](https://stanfordnlp.github.io/stanza/)
+- [Pandas](https://pandas.pydata.org/)
+- [dragonmapper](https://github.com/tsroten/dragonmapper)
+- [hanziconv](https://pythonhosted.org/hanziconv/)
+- [zhon](https://pypi.org/project/zhon/)
 

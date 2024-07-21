@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "ankichinese"
+version = "0.1.0"
+description = "Chinese flashcard generation from text documents"
+authors = ["Keith Hughitt"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+stanza = "^1.7.0"
+pandas = "^2.2.0"
+zhon = "^2.0.2"
+dragonmapper = "^0.2.6"
+hanziconv = "^0.3.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+ankichinese = "ankichinese.cli:run"
